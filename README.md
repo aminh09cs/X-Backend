@@ -8,5 +8,5 @@ Build a feature of social
 2. npm run dev
 
 
-##Tech
+## Tech
 - NodeJS, TypeScript, MongoDB and some design pattern
