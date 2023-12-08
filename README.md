@@ -7,6 +7,10 @@ Build a feature of social
 1. npm run build
 2. npm run dev
 
-
 ## Tech
+
 - NodeJS, TypeScript, MongoDB and some design pattern
+
+## Cheker
+
+minhdev 123123123
