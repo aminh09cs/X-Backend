@@ -1,22 +1,17 @@
 import { ObjectId } from 'mongodb'
-
-enum UserVerifyStatus {
-  Unverified,
-  Verified,
-  Banned
-}
+import { UserVerifyStatusType } from '~/constants/enums'
 
 interface UserType {
   _id?: ObjectId
-  name?: string
+  name: string
   email: string
   password: string
-  data_of_birth?: Date
+  data_of_birth: Date
   create_at?: Date
   update_at?: Date
   email_verify_token?: string
   forgot_password_token?: string
-  verify?: UserVerifyStatus
+  verify?: UserVerifyStatusType
 
   bio?: string
   location?: string
@@ -34,8 +29,7 @@ export default class User {
   update_at: Date
   email_verify_token: string
   forgot_password_token: string
-  verify: UserVerifyStatus
-
+  verify: UserVerifyStatusType
   bio: string
   location: string
   username: string
@@ -52,7 +46,7 @@ export default class User {
     this.update_at = user.update_at || dateInit
     this.email_verify_token = user.email_verify_token || ''
     this.forgot_password_token = user.forgot_password_token || ''
-    this.verify = user.verify || UserVerifyStatus.Unverified
+    this.verify = user.verify || UserVerifyStatusType.Unverified
     this.bio = user.bio || ''
     this.location = user.location || ''
     this.username = user.username || ''

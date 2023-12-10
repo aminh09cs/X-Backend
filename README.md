@@ -11,6 +11,4 @@ Build a feature of social
 
 - NodeJS, TypeScript, MongoDB and some design pattern
 
-## Cheker
-
-minhdev 123123123
+## Checker
