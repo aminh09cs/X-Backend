@@ -1,10 +1,12 @@
 import User from '~/models/schemas/User.schema'
 import databaseService from './database.service'
 import { RegisterRequestBody } from '~/models/request/User.Request'
-import { InsertOneResult } from 'mongodb'
+import { InsertOneResult, ObjectId } from 'mongodb'
 import { hashPassword } from '~/utils/crypto'
 import { signToken } from '~/utils/jwt'
 import { TokenType } from '~/constants/enums'
+import RefreshToken from '~/models/schemas/RefreshToken.schema'
+import '~/utils/dotenv'
 
 export class UsersService {
   private signAccessToken(user_id: string) {
@@ -26,6 +28,27 @@ export class UsersService {
     })
   }
 
+  private signAccessAndRefreshTolen(user_id: string) {
+    return Promise.all([this.signAccessToken(user_id), this.signRefreshToken(user_id)])
+  }
+
+  async login(user_id: string) {
+    const [access_token, refresh_token] = await this.signAccessAndRefreshTolen(user_id)
+    await databaseService.refreshTokens.insertOne(
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+    )
+    return {
+      access_token,
+      refresh_token
+    }
+  }
+  async logout(refresh_token: string) {
+    await databaseService.refreshTokens.deleteOne({ token: refresh_token })
+    return {
+      message: 'Logout Successfully'
+    }
+  }
+
   async register(payload: RegisterRequestBody) {
     const result: InsertOneResult<User> = await databaseService.users.insertOne(
       new User({
@@ -35,10 +58,11 @@ export class UsersService {
       })
     )
     const user_id = result.insertedId.toString()
-    const [access_token, refresh_token] = await Promise.all([
-      this.signAccessToken(user_id),
-      this.signRefreshToken(user_id)
-    ])
+    const [access_token, refresh_token] = await this.signAccessAndRefreshTolen(user_id)
+
+    await databaseService.refreshTokens.insertOne(
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+    )
 
     return {
       access_token,
