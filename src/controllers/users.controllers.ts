@@ -7,6 +7,7 @@ import {
   ForgotPasswordRequestBody,
   LoginRequestBody,
   RegisterRequestBody,
+  ResetPasswordRequestBody,
   VerifyForgotPasswordRequestBody
 } from '~/models/request/User.Request'
 import User from '~/models/schemas/User.schema'
@@ -60,8 +61,8 @@ export const emailVerifyController = async (
       status: 404
     })
   }
-
   const result = await usersService.verifyEmail(user_id)
+  console.log(1)
   return res.json({
     message: 'Email verify successfully',
     result
@@ -105,5 +106,18 @@ export const verifyForgotPasswordController = async (
 ) => {
   return res.json({
     message: 'Verify forgot password successfully'
+  })
+}
+
+export const resetPasswordController = async (
+  req: Request<ParamsDictionary, any, ResetPasswordRequestBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decoded_forgot_password_token
+  const { password } = req.body
+  const result = await usersService.resetPassword(user_id, password)
+  return res.json({
+    result
   })
 }

@@ -81,7 +81,7 @@ export class UsersService {
         ...payload,
         _id: user_id,
         email_verify_token: email_verify_token,
-        data_of_birth: new Date(payload.date_of_birth),
+        date_of_birth: new Date(payload.date_of_birth),
         password: hashPassword(payload.password)
       })
     )
@@ -101,7 +101,8 @@ export class UsersService {
     return Boolean(user)
   }
   async verifyEmail(user_id: string) {
-    await databaseService.users.updateOne({ _id: new ObjectId(user_id) }, [
+    await databaseService.users.updateOne(
+      { _id: new ObjectId(user_id) },
       {
         $set: {
           email_verify_token: '',
@@ -111,14 +112,14 @@ export class UsersService {
           update_at: true
         }
       }
-    ])
+    )
 
     const [access_token, refresh_token] = await this.signAccessAndRefreshTolen(user_id)
     return { access_token, refresh_token }
   }
   async resendEmailVerify(user_id: string) {
     const email_verify_token = await this.signEmailVerifyToken(user_id)
-    console.log('resend', email_verify_token)
+    console.log(email_verify_token)
     await databaseService.users.updateOne(
       { _id: new ObjectId(user_id) },
       {
@@ -151,6 +152,21 @@ export class UsersService {
     //send email notification
     console.log('forgot_password_token -> email is sending', forgot_password_token)
     return { message: 'Check email to reset password' }
+  }
+  async resetPassword(user_id: string, password: string) {
+    await databaseService.users.updateOne(
+      { _id: new ObjectId(user_id) },
+      {
+        $set: {
+          password: hashPassword(password),
+          forgot_password_token: ''
+        },
+        $currentDate: {
+          update_at: true
+        }
+      }
+    )
+    return { message: 'Reset password success' }
   }
 }
 const usersService = new UsersService()

@@ -8,5 +8,6 @@ declare module 'express' {
     refresh_token?: RefreshToken
     decoded_email_verify_token?: typeof Record<string, string | number>
     decoded_authorization?: typeof Record<string, string | number>
+    decoded_forgot_password_token?: typeof Record<string, string | number>
   }
 }

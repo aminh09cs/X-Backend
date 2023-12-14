@@ -6,7 +6,7 @@ interface UserType {
   name: string
   email: string
   password: string
-  data_of_birth: Date
+  date_of_birth: Date
   create_at?: Date
   update_at?: Date
   email_verify_token?: string
@@ -24,7 +24,7 @@ export default class User {
   name: string
   email: string
   password: string
-  data_of_birth: Date
+  date_of_birth: Date
   create_at: Date
   update_at: Date
   email_verify_token: string
@@ -41,7 +41,7 @@ export default class User {
     this.name = user.name || ''
     this.email = user.email
     this.password = user.password
-    this.data_of_birth = user.data_of_birth || new Date()
+    this.date_of_birth = user.date_of_birth || new Date()
     this.create_at = user.create_at || dateInit
     this.update_at = user.update_at || dateInit
     this.email_verify_token = user.email_verify_token || ''

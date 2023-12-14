@@ -286,3 +286,81 @@ export const verifyForgotPasswordValidator = validate(
     ['body']
   )
 )
+
+export const resetPasswordValidator = validate(
+  checkSchema(
+    {
+      password: {
+        notEmpty: {
+          errorMessage: 'Password is required'
+        },
+        isString: true,
+        isLength: {
+          options: { min: 8, max: 99 },
+          errorMessage: 'Password should be at least 8 chars'
+        },
+        trim: true
+      },
+      confirm_password: {
+        notEmpty: {
+          errorMessage: 'Confirm password is required'
+        },
+        isString: true,
+        isLength: {
+          options: { min: 8, max: 99 },
+          errorMessage: 'Confirm password should be at least 8 chars'
+        },
+        trim: true,
+        custom: {
+          options: (value, { req }) => {
+            if (value !== req.body.password) {
+              throw new Error('Confirm password must be same with password')
+            }
+            return true
+          }
+        }
+      },
+      forgot_password_token: {
+        trim: true,
+        custom: {
+          options: async (value: string, { req }) => {
+            if (!value) {
+              throw new ErrorStatus({ message: 'Forget password token is required', status: HTTP_STATUS.UNAUTHORIZED })
+            }
+            try {
+              const decoded_forgot_password_token = await verifyToken({
+                token: value,
+                secretKey: process.env.JWT_FORGOT_PASSWORD_TOKEN_KEY as string
+              })
+              const { user_id } = decoded_forgot_password_token
+
+              const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+
+              if (user === null) {
+                throw new ErrorStatus({
+                  message: 'User not found',
+                  status: HTTP_STATUS.UNAUTHORIZED
+                })
+              }
+              if (user.forgot_password_token !== value) {
+                throw new ErrorStatus({
+                  message: 'Forgot password token is invalid',
+                  status: HTTP_STATUS.UNAUTHORIZED
+                })
+              }
+              req.decoded_forgot_password_token = decoded_forgot_password_token
+            } catch (err) {
+              if (err instanceof JsonWebTokenError) {
+                throw new ErrorStatus({ message: err.message, status: HTTP_STATUS.UNAUTHORIZED })
+              }
+
+              throw err
+            }
+            return true
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)
