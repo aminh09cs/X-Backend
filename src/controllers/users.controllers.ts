@@ -16,7 +16,8 @@ import usersService from '~/services/users.service'
 export const loginController = async (req: Request<ParamsDictionary, any, LoginRequestBody>, res: Response) => {
   const { user } = req
   const _id = user?._id as ObjectId
-  const result = await usersService.login(_id.toString())
+  const verify = user?.verify as UserVerifyStatusType
+  const result = await usersService.login({ user_id: _id.toString(), verify: verify })
   return res.json({
     message: 'Login Successfully',
     result
@@ -36,7 +37,7 @@ export const registerController = async (
 export const logoutController = async (req: Request, res: Response, next: NextFunction) => {
   const { refresh_token } = req
   const token = refresh_token?.token as string
-  const result = await usersService.logout(token)
+  await usersService.logout(token)
   return res.json({
     message: 'Logout Successfully'
   })
@@ -62,7 +63,6 @@ export const emailVerifyController = async (
     })
   }
   const result = await usersService.verifyEmail(user_id)
-  console.log(1)
   return res.json({
     message: 'Email verify successfully',
     result
@@ -94,8 +94,8 @@ export const forgotPasswordController = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { _id } = req.user as User
-  const result = await usersService.forgotPassword((_id as ObjectId).toString())
+  const { _id, verify } = req.user as User
+  const result = await usersService.forgotPassword({ user_id: (_id as ObjectId).toString(), verify: verify })
   return res.json(result)
 }
 
@@ -119,5 +119,20 @@ export const resetPasswordController = async (
   const result = await usersService.resetPassword(user_id, password)
   return res.json({
     result
+  })
+}
+export const profileController = async (req: Request, res: Response, next: NextFunction) => {
+  const { user_id } = req.decoded_authorization
+  const result = await usersService.getProfile(user_id)
+  return res.json({
+    result
+  })
+}
+
+export const updateProfileController = async (req: Request, res: Response, next: NextFunction) => {
+  // const { user_id } = req.decoded_authorization
+  // const result = await usersService.getProfile(user_id)
+  return res.json({
+    message: 'done'
   })
 }

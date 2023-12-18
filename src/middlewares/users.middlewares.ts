@@ -8,6 +8,8 @@ import { ErrorStatus } from '~/models/Errors'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { JsonWebTokenError } from 'jsonwebtoken'
 import { ObjectId } from 'mongodb'
+import { Request, Response, NextFunction } from 'express'
+import { UserVerifyStatusType } from '~/constants/enums'
 
 export const loginValidator = validate(
   checkSchema(
@@ -359,6 +361,37 @@ export const resetPasswordValidator = validate(
             return true
           }
         }
+      }
+    },
+    ['body']
+  )
+)
+
+export const verifiedUserValidator = async (req: Request, res: Response, next: NextFunction) => {
+  const { verify } = req.decoded_authorization
+  try {
+    if (verify !== UserVerifyStatusType.Verified) {
+      throw new ErrorStatus({ message: 'User not verified', status: 403 })
+    }
+    next()
+  } catch (err) {
+    next(err)
+  }
+}
+
+export const updateProfileValidator = validate(
+  checkSchema(
+    {
+      name: {
+        notEmpty: {
+          errorMessage: 'Password is required'
+        },
+        isString: true,
+        isLength: {
+          options: { min: 8, max: 99 },
+          errorMessage: 'Password should be at least 8 chars'
+        },
+        trim: true
       }
     },
     ['body']
