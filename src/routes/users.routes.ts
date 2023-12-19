@@ -11,7 +11,9 @@ import {
   profileController,
   updateProfileController,
   getUserProfileController,
-  followController
+  followController,
+  unfollowController,
+  changePasswordController
 } from '~/controllers/users.controllers'
 import { filterMiddleware } from '~/middlewares/filters.middlewares'
 import {
@@ -25,7 +27,9 @@ import {
   resetPasswordValidator,
   verifiedUserValidator,
   updateProfileValidator,
-  followValidator
+  followValidator,
+  unfollowValidator,
+  changePasswordValidator
 } from '~/middlewares/users.middlewares'
 import { UpdateProfileRequestBody } from '~/models/request/User.Request'
 import { wrapRequestHandler } from '~/utils/handlers'
@@ -47,6 +51,13 @@ usersRouter.post(
   wrapRequestHandler(verifyForgotPasswordController)
 )
 usersRouter.post('/reset-password', resetPasswordValidator, wrapRequestHandler(resetPasswordController))
+usersRouter.put(
+  '/change-password',
+  accessTokenValidator,
+  verifiedUserValidator,
+  changePasswordValidator,
+  wrapRequestHandler(changePasswordController)
+)
 
 //Router for user(profile, information)
 
@@ -69,6 +80,14 @@ usersRouter.post(
   verifiedUserValidator,
   followValidator,
   wrapRequestHandler(followController)
+)
+
+usersRouter.delete(
+  '/follow/:user_id',
+  accessTokenValidator,
+  verifiedUserValidator,
+  unfollowValidator,
+  wrapRequestHandler(unfollowController)
 )
 
 export default usersRouter

@@ -1,4 +1,4 @@
-import { StringDecoder } from 'string_decoder'
+import { ParamsDictionary } from 'express-serve-static-core'
 
 export interface LoginRequestBody {
   email: string
@@ -27,6 +27,12 @@ export interface ResetPasswordRequestBody {
   password: string
   confirm_password: string
 }
+
+export interface ChangePasswordRequestBody {
+  old_password: string
+  new_password: string
+  confirm_password: string
+}
 export interface UpdateProfileRequestBody {
   name?: string
   date_of_birth?: string
@@ -42,4 +48,8 @@ export interface FollowRequestBody {
 
 export interface GetUserProfileParams {
   username: string
+}
+
+export interface UnfollowRequestParam extends ParamsDictionary {
+  user_id: string
 }

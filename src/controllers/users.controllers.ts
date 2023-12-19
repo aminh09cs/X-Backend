@@ -5,6 +5,7 @@ import { ObjectId } from 'mongodb'
 import { UserVerifyStatusType } from '~/constants/enums'
 import { ErrorStatus } from '~/models/Errors'
 import {
+  ChangePasswordRequestBody,
   EmailVerifyRequestBody,
   FollowRequestBody,
   ForgotPasswordRequestBody,
@@ -12,6 +13,7 @@ import {
   LoginRequestBody,
   RegisterRequestBody,
   ResetPasswordRequestBody,
+  UnfollowRequestParam,
   UpdateProfileRequestBody,
   VerifyForgotPasswordRequestBody
 } from '~/models/request/User.Request'
@@ -145,7 +147,7 @@ export const updateProfileController = async (
   const result = await usersService.updateProfile(user_id, user)
   return res.json({
     message: 'Update Profile Successfully',
-    result: result
+    result
   })
 }
 export const getUserProfileController = async (
@@ -177,7 +179,31 @@ export const followController = async (
     })
   }
   const result = await usersService.follow(user_id, followed_user_id)
+  return res.json(result)
+}
+
+export const unfollowController = async (req: Request<UnfollowRequestParam>, res: Response, next: NextFunction) => {
+  const { user_id } = req.decoded_authorization
+  const { user_id: followed_user_id } = req.params
+
+  if (user_id === followed_user_id) {
+    throw new ErrorStatus({
+      message: "You can't unfollow yourself",
+      status: 404
+    })
+  }
+  const result = await usersService.unfollow(user_id, followed_user_id)
+  return res.json(result)
+}
+
+export const changePasswordController = async (
+  req: Request<ParamsDictionary, any, ChangePasswordRequestBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decoded_authorization
+  await usersService.changePassword(user_id, req.body)
   return res.json({
-    result
+    message: 'Change Password Successfully'
   })
 }

@@ -410,7 +410,17 @@ export const updateProfileValidator = validate(
       username: {
         optional: true,
         isString: { errorMessage: 'Username must be a string' },
-        isLength: { options: { min: 1, max: 50 } }
+        isLength: { options: { min: 1, max: 50 } },
+        custom: {
+          options: async (value: string, { req }) => {
+            const { user_id } = req.decoded_authorization
+            const user = await databaseService.users.findOne({ username: value })
+            if (user_id !== user?._id.toString() && user) {
+              throw new Error('Username already exist')
+            }
+            return true
+          }
+        }
       },
       avatar: {
         optional: true,
@@ -440,6 +450,92 @@ export const followValidator = validate(
 
             if (followed_user === null) {
               throw new ErrorStatus({ message: 'Followed User Not Found', status: HTTP_STATUS.NOT_FOUND })
+            }
+            return true
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)
+
+export const unfollowValidator = validate(
+  checkSchema(
+    {
+      user_id: {
+        trim: true,
+        custom: {
+          options: async (value: string) => {
+            if (!value) {
+              throw new ErrorStatus({ message: 'User id is not empty', status: HTTP_STATUS.NOT_FOUND })
+            }
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorStatus({ message: 'User id is invalid', status: HTTP_STATUS.NOT_FOUND })
+            }
+
+            const followed_user = await databaseService.users.findOne({ _id: new ObjectId(value) })
+
+            if (followed_user === null) {
+              throw new ErrorStatus({ message: 'User Not Found', status: HTTP_STATUS.NOT_FOUND })
+            }
+            return true
+          }
+        }
+      }
+    },
+    ['params']
+  )
+)
+
+export const changePasswordValidator = validate(
+  checkSchema(
+    {
+      old_password: {
+        notEmpty: {
+          errorMessage: 'Old password is required'
+        },
+        isString: true,
+        isLength: {
+          options: { min: 8, max: 99 },
+          errorMessage: 'Password should be at least 8 chars'
+        },
+        custom: {
+          options: async (value: string, { req }) => {
+            const { user_id } = req.decoded_authorization
+            const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+            if (user?.password !== hashPassword(value)) {
+              throw new Error('Old password is incorrect')
+            }
+            return true
+          }
+        }
+      },
+      new_password: {
+        notEmpty: {
+          errorMessage: 'New password is required'
+        },
+        isString: true,
+        isLength: {
+          options: { min: 8, max: 99 },
+          errorMessage: 'New password should be at least 8 chars'
+        },
+        trim: true
+      },
+      confirm_password: {
+        notEmpty: {
+          errorMessage: 'Confirm password is required'
+        },
+        isString: true,
+        isLength: {
+          options: { min: 8, max: 99 },
+          errorMessage: 'Confirm password should be at least 8 chars'
+        },
+        trim: true,
+        custom: {
+          options: (value, { req }) => {
+            if (value !== req.body.new_password) {
+              throw new Error('Confirm password must be same with new password')
             }
             return true
           }

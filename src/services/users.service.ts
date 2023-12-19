@@ -1,6 +1,6 @@
 import User from '~/models/schemas/User.schema'
 import databaseService from './database.service'
-import { RegisterRequestBody, UpdateProfileRequestBody } from '~/models/request/User.Request'
+import { ChangePasswordRequestBody, RegisterRequestBody, UpdateProfileRequestBody } from '~/models/request/User.Request'
 import { InsertOneResult, ObjectId } from 'mongodb'
 import { hashPassword } from '~/utils/crypto'
 import { signToken } from '~/utils/jwt'
@@ -186,6 +186,22 @@ export class UsersService {
     )
     return { message: 'Reset password success' }
   }
+
+  async changePassword(user_id: string, payload: ChangePasswordRequestBody) {
+    await databaseService.users.updateOne(
+      {
+        _id: new ObjectId(user_id)
+      },
+      {
+        $set: {
+          password: hashPassword(payload.new_password)
+        },
+        $currentDate: {
+          update_at: true
+        }
+      }
+    )
+  }
   async getProfile(user_id: string) {
     const user = await databaseService.users.findOne(
       { _id: new ObjectId(user_id) },
@@ -272,6 +288,24 @@ export class UsersService {
     }
     return {
       message: 'User Followed Before'
+    }
+  }
+  async unfollow(user_id: string, followed_user_id: string) {
+    const followers = await databaseService.followers.findOne({
+      user_id: new ObjectId(user_id),
+      followed_user_id: new ObjectId(followed_user_id)
+    })
+    if (followers === null) {
+      return {
+        message: 'Already Unfollowed'
+      }
+    }
+    await databaseService.followers.deleteOne({
+      user_id: new ObjectId(user_id),
+      followed_user_id: new ObjectId(followed_user_id)
+    })
+    return {
+      message: 'Unfollowed Successfully'
     }
   }
 }
