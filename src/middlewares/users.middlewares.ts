@@ -38,7 +38,7 @@ export const loginValidator = validate(
         notEmpty: {
           errorMessage: 'Password is required'
         },
-        isString: true,
+        isString: { errorMessage: 'Name must be a string' },
         isLength: {
           options: { min: 8, max: 99 },
           errorMessage: 'Password should be at least 8 chars'
@@ -383,15 +383,67 @@ export const updateProfileValidator = validate(
   checkSchema(
     {
       name: {
-        notEmpty: {
-          errorMessage: 'Password is required'
-        },
-        isString: true,
-        isLength: {
-          options: { min: 8, max: 99 },
-          errorMessage: 'Password should be at least 8 chars'
-        },
-        trim: true
+        optional: true,
+        isString: { errorMessage: 'Name must be a string' },
+        isLength: { options: { min: 1, max: 99 } }
+      },
+      date_of_birth: {
+        optional: true,
+        isString: { errorMessage: 'Date must be a string' },
+        isISO8601: {
+          options: {
+            strict: true,
+            strictSeparator: true
+          }
+        }
+      },
+      bio: {
+        optional: true,
+        isString: { errorMessage: 'Bio must be a string' },
+        isLength: { options: { min: 1, max: 150 } }
+      },
+      location: {
+        optional: true,
+        isString: { errorMessage: 'Location must be a string' },
+        isLength: { options: { min: 1, max: 150 } }
+      },
+      username: {
+        optional: true,
+        isString: { errorMessage: 'Username must be a string' },
+        isLength: { options: { min: 1, max: 50 } }
+      },
+      avatar: {
+        optional: true,
+        isString: { errorMessage: 'Avatar must be a string' }
+      }
+    },
+    ['body']
+  )
+)
+
+export const followValidator = validate(
+  checkSchema(
+    {
+      followed_user_id: {
+        trim: true,
+
+        custom: {
+          options: async (value: string) => {
+            if (!value) {
+              throw new ErrorStatus({ message: 'Followd user id is not empty', status: HTTP_STATUS.NOT_FOUND })
+            }
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorStatus({ message: 'Followd user id is invalid', status: HTTP_STATUS.NOT_FOUND })
+            }
+
+            const followed_user = await databaseService.users.findOne({ _id: new ObjectId(value) })
+
+            if (followed_user === null) {
+              throw new ErrorStatus({ message: 'Followed User Not Found', status: HTTP_STATUS.NOT_FOUND })
+            }
+            return true
+          }
+        }
       }
     },
     ['body']

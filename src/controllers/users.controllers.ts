@@ -1,13 +1,18 @@
 import { NextFunction, Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
+import { pick } from 'lodash'
 import { ObjectId } from 'mongodb'
 import { UserVerifyStatusType } from '~/constants/enums'
+import { ErrorStatus } from '~/models/Errors'
 import {
   EmailVerifyRequestBody,
+  FollowRequestBody,
   ForgotPasswordRequestBody,
+  GetUserProfileParams,
   LoginRequestBody,
   RegisterRequestBody,
   ResetPasswordRequestBody,
+  UpdateProfileRequestBody,
   VerifyForgotPasswordRequestBody
 } from '~/models/request/User.Request'
 import User from '~/models/schemas/User.schema'
@@ -129,10 +134,50 @@ export const profileController = async (req: Request, res: Response, next: NextF
   })
 }
 
-export const updateProfileController = async (req: Request, res: Response, next: NextFunction) => {
-  // const { user_id } = req.decoded_authorization
-  // const result = await usersService.getProfile(user_id)
+export const updateProfileController = async (
+  req: Request<ParamsDictionary, any, UpdateProfileRequestBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decoded_authorization
+  // const user = pick(req.body, ['name', 'date_of_birth', 'bio', 'location', 'username', 'avatar'])
+  const user = req.body
+  const result = await usersService.updateProfile(user_id, user)
   return res.json({
-    message: 'done'
+    message: 'Update Profile Successfully',
+    result: result
+  })
+}
+export const getUserProfileController = async (
+  req: Request<GetUserProfileParams>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { username } = req.params
+
+  const result = await usersService.getUserProfile(username)
+  return res.json({
+    message: 'Get Profile Successfully',
+    result
+  })
+}
+
+export const followController = async (
+  req: Request<ParamsDictionary, any, FollowRequestBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decoded_authorization
+  const { followed_user_id } = req.body
+
+  if (user_id === followed_user_id) {
+    throw new ErrorStatus({
+      message: "You can't follow yourself",
+      status: 404
+    })
+  }
+  const result = await usersService.follow(user_id, followed_user_id)
+  return res.json({
+    result
   })
 }

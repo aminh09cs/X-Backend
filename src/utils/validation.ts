@@ -20,7 +20,6 @@ export const validate = (schema: RunnableValidationChains<ValidationChain>) => {
       if (
         //Errors of authorization
         msg instanceof ErrorStatus &&
-        msg.status === HTTP_STATUS.UNAUTHORIZED &&
         msg.status !== HTTP_STATUS.UNPROCESSABLE_ENTITY
       ) {
         return next(msg)

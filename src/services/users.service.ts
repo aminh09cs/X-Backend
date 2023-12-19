@@ -1,12 +1,14 @@
 import User from '~/models/schemas/User.schema'
 import databaseService from './database.service'
-import { RegisterRequestBody } from '~/models/request/User.Request'
+import { RegisterRequestBody, UpdateProfileRequestBody } from '~/models/request/User.Request'
 import { InsertOneResult, ObjectId } from 'mongodb'
 import { hashPassword } from '~/utils/crypto'
 import { signToken } from '~/utils/jwt'
 import { TokenType, UserVerifyStatusType } from '~/constants/enums'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import '~/utils/dotenv'
+import { ErrorStatus } from '~/models/Errors'
+import Follower from '~/models/schemas/Follower.schema'
 
 export class UsersService {
   private signAccessToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatusType }) {
@@ -87,6 +89,7 @@ export class UsersService {
       new User({
         ...payload,
         _id: user_id,
+        username: `user_${user_id.toString()}`,
         email_verify_token: email_verify_token,
         date_of_birth: new Date(payload.date_of_birth),
         password: hashPassword(payload.password)
@@ -135,7 +138,7 @@ export class UsersService {
       user_id,
       verify: UserVerifyStatusType.Unverified
     })
-    console.log(email_verify_token)
+
     await databaseService.users.updateOne(
       { _id: new ObjectId(user_id) },
       {
@@ -166,7 +169,6 @@ export class UsersService {
     )
 
     //send email notification
-    console.log('forgot_password_token -> email is sending', forgot_password_token)
     return { message: 'Check email to reset password' }
   }
   async resetPassword(user_id: string, password: string) {
@@ -200,6 +202,76 @@ export class UsersService {
         message: 'Get profile successfully',
         user
       }
+    }
+  }
+  async updateProfile(user_id: string, payload: UpdateProfileRequestBody) {
+    const payloadClone = (
+      payload.date_of_birth ? { ...payload, date_of_birth: new Date(payload.date_of_birth) } : payload
+    ) as UpdateProfileRequestBody & { date_of_birth?: Date }
+    const user = await databaseService.users.findOneAndUpdate(
+      {
+        _id: new ObjectId(user_id)
+      },
+      {
+        $set: {
+          ...payloadClone
+        },
+        $currentDate: {
+          update_at: true
+        }
+      },
+      {
+        projection: {
+          password: 0,
+          email_verify_token: 0,
+          forgot_password_token: 0
+        },
+        returnDocument: 'after'
+      }
+    )
+    return user
+  }
+
+  async getUserProfile(username: string) {
+    const user = await databaseService.users.findOne(
+      { username: username },
+      {
+        projection: {
+          password: 0,
+          email_verify_token: 0,
+          forgot_password_token: 0,
+          verify: 0,
+          create_at: 0,
+          update_at: 0
+        }
+      }
+    )
+    if (user === null) {
+      throw new ErrorStatus({
+        message: 'User not found',
+        status: 404
+      })
+    }
+    return user
+  }
+  async follow(user_id: string, followed_user_id: string) {
+    const followers = await databaseService.followers.findOne({
+      user_id: new ObjectId(user_id),
+      followed_user_id: new ObjectId(followed_user_id)
+    })
+    if (followers === null) {
+      await databaseService.followers.insertOne(
+        new Follower({
+          user_id: new ObjectId(user_id),
+          followed_user_id: new ObjectId(followed_user_id)
+        })
+      )
+      return {
+        message: 'Followed Success'
+      }
+    }
+    return {
+      message: 'User Followed Before'
     }
   }
 }
